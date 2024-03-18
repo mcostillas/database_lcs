@@ -3,32 +3,32 @@ from fastapi import Depends, HTTPException, APIRouter, Form
 from .db import get_db
 import bcrypt
 
-UsersRouter = APIRouter(tags=["Users"])
+AcadcoordinatorRouter = APIRouter(tags=["Academic Coordinator"])
 
 # CRUD operations
 
-@UsersRouter.get("/academic_coordinator/", response_model=list)
+@AcadcoordinatorRouter.get("/academic_coordinator/", response_model=list)
 async def read_acad(
     db=Depends(get_db)
 ):
-    query = "SELECT coordinator_id, first_name, last_name FROM academic_coordinator"
+    query = "SELECT coordinator_id, first_name, last_name, schedule_id FROM academic_coordinator"
     db[0].execute(query)
-    academic_coordinator = [{"id": user[0], "username": user[1]} for user in db[0].fetchall()]
-    return users
+    academic_coordinator = [{"coordinator_id": academic_coordinator[0], "first_Name": academic_coordinator[1],"last_Name": academic_coordinator[2],"schedule_id": academic_coordinator[3]} for academic_coordinator in db[0].fetchall()]
+    return academic_coordinator
 
-@UsersRouter.get("/users/{user_id}", response_model=dict)
-async def read_user(
-    user_id: int, 
+@AcadcoordinatorRouter.get("/academic_coordinator/{coordinator_id}", response_model=dict)
+async def read_acad(
+    coordinator_id: int, 
     db=Depends(get_db)
 ):
-    query = "SELECT id, username FROM users WHERE id = %s"
-    db[0].execute(query, (user_id,))
-    user = db[0].fetchone()
-    if user:
-        return {"id": user[0], "username": user[1]}
+    query = "SELECT coordinator_id, first_name, last_name, schedule_id FROM academic_coordinator WHERE coordinator_id = %s"
+    db[0].execute(query, (coordinator_id,))
+    academic_coordinator = db[0].fetchone()
+    if  academic_coordinator:
+        return {"coordinator_id": academic_coordinator[0], "first_name":academic_coordinator[1],"last_name":academic_coordinator[2],"schedule_id":academic_coordinator[3]}
     raise HTTPException(status_code=404, detail="User not found")
 
-@UsersRouter.post("/users/", response_model=dict)
+@AcadcoordinatorRouter.post("/users/", response_model=dict)
 async def create_user(
     email: str = Form(...), 
     username: str = Form(...), 
@@ -48,7 +48,7 @@ async def create_user(
 
     return {"id": new_user_id, "username": username}
 
-@UsersRouter.put("/users/{user_id}", response_model=dict)
+@AcadcoordinatorRouter.put("/users/{user_id}", response_model=dict)
 async def update_user(
     user_id: int,
     email: str = Form(...),
@@ -71,7 +71,7 @@ async def update_user(
     # If no rows were affected, user not found
     raise HTTPException(status_code=404, detail="User not found")
 
-@UsersRouter.delete("/users/{user_id}", response_model=dict)
+@AcadcoordinatorRouter.delete("/users/{user_id}", response_model=dict)
 async def delete_user(
     user_id: int,
     db=Depends(get_db)
