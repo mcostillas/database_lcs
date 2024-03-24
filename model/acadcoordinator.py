@@ -38,7 +38,7 @@ async def create_user(
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
-    hashed_scheduleid = hash_password(schedule_id)
+    hashed_scheduleid = hash_password(str(schedule_id))
 
     query = "INSERT INTO academic_coordinator (coordinator_id, first_name,last_name, schedule_id) VALUES (%s, %s, %s, %s)"
     db[0].execute(query, (coordinator_id,first_name,last_name, hashed_scheduleid))
@@ -63,7 +63,7 @@ async def update_user(
     hashed_scheduleid = hash_password(str(schedule_id))
 
     # Update user information in the database 
-    query = "UPDATE academic_coordinator SET coordinator_id = %s, first_name= %s, last_name = %s,schedule_id = %s WHERE id = %s"
+    query = "UPDATE academic_coordinator SET coordinator_id = %s, first_name= %s, last_name = %s,schedule_id = %s WHERE coordinator_id = %s"
     db[0].execute(query, (coordinator_id, first_name,last_name, hashed_scheduleid,coordinator_id ))
 
     # Check if the update was successful
@@ -81,7 +81,7 @@ async def delete_user(
 ):
     try:
         # Check if the user exists
-        query_check_user = "SELECT coordinator_id FROM academic_coordinator WHERE id = %s"
+        query_check_user = "SELECT coordinator_id FROM academic_coordinator WHERE coordinator_id = %s"
         db[0].execute(query_check_user, (coordinator_id,))
         existing_user = db[0].fetchone()
 
@@ -89,7 +89,7 @@ async def delete_user(
             raise HTTPException(status_code=404, detail="User not found")
 
         # Delete the user
-        query_delete_user = "DELETE FROM academic_coordinator WHERE id = %s"
+        query_delete_user = "DELETE FROM academic_coordinator WHERE coordinator_id = %s"
         db[0].execute(query_delete_user, (coordinator_id,))
         db[1].commit()
 
