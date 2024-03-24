@@ -1,6 +1,7 @@
 # model/users.py
-from fastapi import Depends, HTTPException, APIRouter, Form
+from fastapi import Depends, HTTPException, APIRouter, Form, Path
 from .db import get_db
+
 import bcrypt
 
 AcadcoordinatorRouter = APIRouter(tags=["Academic Coordinator"])
@@ -28,40 +29,42 @@ async def read_acad(
         return {"coordinator_id": academic_coordinator[0], "first_name":academic_coordinator[1],"last_name":academic_coordinator[2],"schedule_id":academic_coordinator[3]}
     raise HTTPException(status_code=404, detail="User not found")
 
-@AcadcoordinatorRouter.post("/users/", response_model=dict)
+@AcadcoordinatorRouter.post("/academic_coordinator/{coordinator_id}", response_model=dict)
 async def create_user(
-    email: str = Form(...), 
-    username: str = Form(...), 
-    password: str = Form(...), 
+    coordinator_id: int = Path(...), 
+    first_name: str = Form(...), 
+    last_name: str = Form(...), 
+    schedule_id: int = Form(...), 
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
-    hashed_password = hash_password(password)
+    hashed_scheduleid = hash_password(schedule_id)
 
-    query = "INSERT INTO users (email, username, password) VALUES (%s, %s, %s)"
-    db[0].execute(query, (email, username, hashed_password))
+    query = "INSERT INTO academic_coordinator (coordinator_id, first_name,last_name, schedule_id) VALUES (%s, %s, %s, %s)"
+    db[0].execute(query, (coordinator_id,first_name,last_name, hashed_scheduleid))
 
     # Retrieve the last inserted ID using LAST_INSERT_ID()
-    db[0].execute("SELECT LAST_INSERT_ID()")
+    db[0].execute(" SELECT MAX(coordinator_id)  FROM academic_coordinator")
     new_user_id = db[0].fetchone()[0]
     db[1].commit()
 
-    return {"id": new_user_id, "username": username}
+    return {"id": new_user_id, "coordinator_id": coordinator_id, "first_name": first_name, "last_name": last_name,"schedule_id":schedule_id}
 
-@AcadcoordinatorRouter.put("/users/{user_id}", response_model=dict)
+@AcadcoordinatorRouter.put("/academic_coordinator/{coordinator_id}", response_model=dict)
 async def update_user(
-    user_id: int,
-    email: str = Form(...),
-    username: str = Form(...),
-    password: str = Form(...),
+   
+    coordinator_id: int = Path(...), 
+    first_name: str = Form(...), 
+    last_name: str = Form(...), 
+    schedule_id: int = Form(...), 
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
-    hashed_password = hash_password(password)
+    hashed_scheduleid = hash_password(str(schedule_id))
 
     # Update user information in the database 
-    query = "UPDATE users SET email = %s, username = %s, password = %s WHERE id = %s"
-    db[0].execute(query, (email, username, hashed_password, user_id))
+    query = "UPDATE academic_coordinator SET coordinator_id = %s, first_name= %s, last_name = %s,schedule_id = %s WHERE id = %s"
+    db[0].execute(query, (coordinator_id, first_name,last_name, hashed_scheduleid,coordinator_id ))
 
     # Check if the update was successful
     if db[0].rowcount > 0:
@@ -71,23 +74,23 @@ async def update_user(
     # If no rows were affected, user not found
     raise HTTPException(status_code=404, detail="User not found")
 
-@AcadcoordinatorRouter.delete("/users/{user_id}", response_model=dict)
+@AcadcoordinatorRouter.delete("/academic_coordinator/{coordinator_id}", response_model=dict)
 async def delete_user(
-    user_id: int,
+    coordinator_id: int,
     db=Depends(get_db)
 ):
     try:
         # Check if the user exists
-        query_check_user = "SELECT id FROM users WHERE id = %s"
-        db[0].execute(query_check_user, (user_id,))
+        query_check_user = "SELECT coordinator_id FROM academic_coordinator WHERE id = %s"
+        db[0].execute(query_check_user, (coordinator_id,))
         existing_user = db[0].fetchone()
 
         if not existing_user:
             raise HTTPException(status_code=404, detail="User not found")
 
         # Delete the user
-        query_delete_user = "DELETE FROM users WHERE id = %s"
-        db[0].execute(query_delete_user, (user_id,))
+        query_delete_user = "DELETE FROM academic_coordinator WHERE id = %s"
+        db[0].execute(query_delete_user, (coordinator_id,))
         db[1].commit()
 
         return {"message": "User deleted successfully"}
