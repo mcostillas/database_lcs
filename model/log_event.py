@@ -40,15 +40,18 @@ async def create_log(
     # Hash the password using bcrypt
     
 
-    query = "INSERT INTO log_event (log_id,teacher_id,lab_id,timestamp,activity) VALUES (%s, %s, %s, %s, %s)"
-    db[0].execute(query, (log_id,teacher_id,lab_id,timestamp,activity))
+    try:
+        query = "INSERT INTO log_event (log_id, teacher_id, lab_id, timestamp, activity) VALUES (%s, %s, %s, %s, %s)"
+        db[0].execute(query, (log_id, teacher_id, lab_id, timestamp, activity))
 
-    # Retrieve the last inserted ID using LAST_INSERT_ID()
-    db[0].execute(" SELECT MAX(log_id) FROM log_event")
-    new_user_id = db[0].fetchone()[0]
-    db[1].commit()
+        db[1].commit()
 
-    return {"id": new_user_id, "log_id": log_id,"teacher_id":teacher_id,"lab_id":lab_id, "timestamp": timestamp, "activity": activity}
+        db[0].execute("SELECT MAX(log_id) FROM log_event")
+        new_log_id = db[0].fetchone()[0]
+    except Exception as e:
+        return {"error": str(e)}
+
+    return {"id": new_log_id, "log_id": log_id, "teacher_id": teacher_id, "lab_id": lab_id, "timestamp": timestamp, "activity": activity}
 
 @LogsRouter.put("/log_event/{log_id}", response_model=dict)
 async def update_log(
