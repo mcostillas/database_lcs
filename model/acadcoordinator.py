@@ -30,7 +30,7 @@ async def read_acad(
     raise HTTPException(status_code=404, detail="User not found")
 
 @AcadcoordinatorRouter.post("/academic_coordinator/{coordinator_id}", response_model=dict)
-async def create_user(
+async def create_coordinator(
     coordinator_id: int = Path(...), 
     first_name: str = Form(...), 
     last_name: str = Form(...), 
@@ -51,7 +51,7 @@ async def create_user(
     return {"id": new_user_id, "coordinator_id": coordinator_id, "first_name": first_name, "last_name": last_name,"schedule_id":schedule_id}
 
 @AcadcoordinatorRouter.put("/academic_coordinator/{coordinator_id}", response_model=dict)
-async def update_user(
+async def update_coordinator(
    
     coordinator_id: int = Path(...), 
     first_name: str = Form(...), 
@@ -75,7 +75,7 @@ async def update_user(
     raise HTTPException(status_code=404, detail="User not found")
 
 @AcadcoordinatorRouter.delete("/academic_coordinator/{coordinator_id}", response_model=dict)
-async def delete_user(
+async def delete_coordinator(
     coordinator_id: int,
     db=Depends(get_db)
 ):
