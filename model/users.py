@@ -42,7 +42,7 @@ async def create_user(
     db[0].execute(query, (email, username, hashed_password))
 
     # Retrieve the last inserted ID using LAST_INSERT_ID()
-    db[0].execute(" SELECT MAX(coordinator_id) FROM academic_coordinator")
+    db[0].execute("SELECT LAST_INSERT_ID()")
     new_user_id = db[0].fetchone()[0]
     db[1].commit()
 

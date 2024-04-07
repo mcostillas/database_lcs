@@ -34,14 +34,14 @@ async def read_booking(
 async def create_booking(
     booking_id: int = Path(...), 
     guest_id: int = Form(...), 
-    date_input: date = Body(...),
-    time_input: time = Body(...),
+    date_input: str = Body(...),
+    time_input: str = Body(...),
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
    
 
-    query = "INSERT INTO booking_activity (booking_id, guest_id, date , time) VALUES (%s, %s, %s, %s)"
+    query = "INSERT INTO booking_activity (booking_id, guest_id, date_input , time_input) VALUES (%s, %s, %s, %s)"
     db[0].execute(query, (booking_id,guest_id,date_input, time_input))
 
     # Retrieve the last inserted ID using LAST_INSERT_ID()
@@ -57,8 +57,8 @@ async def update_booking(
    
     booking_id: int = Path(...), 
     guest_id: int = Form(...), 
-    date_input: date = Body(...),
-    time_input: time = Body(...),
+    date_input: str = Body(...),
+    time_input: str = Body(...),
 
     db=Depends(get_db)
 ):
@@ -66,7 +66,7 @@ async def update_booking(
 
     # Update user information in the database 
     query = "UPDATE booking_activity SET booking_id = %s, guest_id= %s, date = %s,time = %s WHERE booking_id = %s"
-    db[0].execute(query, (booking_id, guest_id,date, time,booking_id ))
+    db[0].execute(query, (booking_id, guest_id,date_input, time_input,booking_id ))
 
     # Check if the update was successful
     if db[0].rowcount > 0:
