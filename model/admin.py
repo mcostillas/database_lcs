@@ -1,69 +1,71 @@
 # model/users.py
 from fastapi import Depends, HTTPException, APIRouter, Form, Path
+from fastapi.security import User
 from .db import get_db
 
 import bcrypt
 
-AdminRouter = APIRouter(tags=["Admin"])
+AdminRouter = APIRouter(tags=["User"])
 
 # CRUD operations
 
 @AdminRouter.get("/admin/", response_model=list)
-async def read_admin(
+async def read_user(
     db=Depends(get_db)
 ):
-    query = "SELECT admin_id, first_name, last_name FROM admin"
+    query = "SELECT admin_id, username, password, role FROM admin"
     db[0].execute(query)
-    academic_coordinator = [{"admin_id": admin[0], "first_Name": admin[1],"last_Name": admin[2],} for admin in db[0].fetchall()]
-    return academic_coordinator
+    admin = [{"admin_id": admin[0], "username": admin[1],"password": admin[2],"role": admin[3]} for admin in db[0].fetchall()]
+    return admin
 
 @AdminRouter.get("/admin/{admin_id}", response_model=dict)
-async def read_admin(
+async def read_acad(
     admin_id: int, 
     db=Depends(get_db)
 ):
-    query = "SELECT admin_id, first_name, last_name FROM admin WHERE admin_id = %s"
+    query = "SELECT admin_id, username, password, role FROM admin WHERE admin_id = %s"
     db[0].execute(query, (admin_id,))
     admin = db[0].fetchone()
     if  admin:
-        return {"admin_id": admin[0], "first_name":admin[1],"last_name":admin[2]}
+        return {"admin_id": admin[0], "username":admin[1],"password":admin[2],"role":admin[3]}
     raise HTTPException(status_code=404, detail="User not found")
 
 @AdminRouter.post("/admin/{admin_id}", response_model=dict)
-async def create_admin(
+async def create_user(
     admin_id: int = Path(...), 
-    first_name: str = Form(...), 
-    last_name: str = Form(...), 
+    username: str = Form(...), 
+    password: str = Form(...), 
+    role: str = Form(...), 
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
-   
+    hashed_password = hash_password(str(password))
 
-    query = "INSERT INTO admin (admin_id, first_name,last_name) VALUES (%s, %s, %s)"
-    db[0].execute(query, (admin_id,first_name,last_name))
+    query = "INSERT INTO admin (admin_id, username,password, role) VALUES (%s, %s, %s, %s)"
+    db[0].execute(query, (admin_id,username,hashed_password, role))
 
     # Retrieve the last inserted ID using LAST_INSERT_ID()
     db[0].execute(" SELECT MAX(admin_id)  FROM admin")
-    new_user_id = db[0].fetchone()[0]
+    new_admin_id = db[0].fetchone()[0]
     db[1].commit()
 
-    return {"id": new_user_id, "admin_id": admin_id, "first_name": first_name, "last_name": last_name}
+    return {"id": new_admin_id, "admin_id": admin_id, "username": username, "password": password,"role":role}
 
 @AdminRouter.put("/admin/{admin_id}", response_model=dict)
-async def update_admin(
+async def update_user(
    
     admin_id: int = Path(...), 
-    first_name: str = Form(...), 
-    last_name: str = Form(...), 
-   
+    username: str = Form(...), 
+    password: str = Form(...), 
+    role: str = Form(...), 
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
-    
+
 
     # Update user information in the database 
-    query = "UPDATE admin SET admin_id = %s, first_name= %s, last_name = %s WHERE admin_id = %s"
-    db[0].execute(query, (admin_id, first_name,last_name, admin_id ))
+    query = "UPDATE admin SET admin_id = %s, username= %s, password = %s,role = %s WHERE admin_id = %s"
+    db[0].execute(query, (admin_id, username, role, admin_id ))
 
     # Check if the update was successful
     if db[0].rowcount > 0:
@@ -74,7 +76,7 @@ async def update_admin(
     raise HTTPException(status_code=404, detail="User not found")
 
 @AdminRouter.delete("/admin/{admin_id}", response_model=dict)
-async def delete_admin(
+async def delete_user(
     admin_id: int,
     db=Depends(get_db)
 ):
@@ -106,3 +108,11 @@ def hash_password(password: str):
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')  # Decode bytes to string for storage
+
+@AdminRouter.post("/admin/login")
+def login(user: User):
+    # Perform authentication (replace this with your actual authentication logic)
+    if user.username == "admin" and user.password == "admin":
+        return {"message": "Login successful"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
