@@ -1,6 +1,5 @@
 # model/users.py
 from fastapi import Depends, HTTPException, APIRouter, Form, Path
-from fastapi.security import User
 from .db import get_db
 
 import bcrypt
@@ -65,7 +64,7 @@ async def update_user(
 
     # Update user information in the database 
     query = "UPDATE admin SET admin_id = %s, username= %s, password = %s,role = %s WHERE admin_id = %s"
-    db[0].execute(query, (admin_id, username, role, admin_id ))
+    db[0].execute(query, (admin_id, username,password, role ))
 
     # Check if the update was successful
     if db[0].rowcount > 0:
@@ -109,10 +108,24 @@ def hash_password(password: str):
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')  # Decode bytes to string for storage
 
-@AdminRouter.post("/admin/login")
-def login(user: User):
-    # Perform authentication (replace this with your actual authentication logic)
-    if user.username == "admin" and user.password == "admin":
-        return {"message": "Login successful"}
-    else:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
+@AdminRouter.post("/admin/login/", response_model=dict)
+async def login_administrator(
+   username: str = Form(...), 
+    password: str = Form(...), 
+    db=Depends(get_db)
+):
+    # Query the database to check if the username exists
+    query_check_user = "SELECT password FROM admin WHERE username = %s"
+    db[0].execute(query_check_user, (username,))
+    user = db[0].fetchone()
+
+    if user:
+        # Retrieve the stored password from the database
+        stored_password = user[0]
+
+        if password == stored_password:
+            # If username and password are correct, print login successful
+             return {"message": "Login successful"}
+    
+    # If username or password is incorrect, raise an HTTPException
+    raise HTTPException(status_code=401, detail="Incorrect username or password")
