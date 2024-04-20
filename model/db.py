@@ -5,7 +5,7 @@ db_config = {
     "host": "localhost",
     "user": "root",
     "password": "",
-    "database": "database_lcs",
+    "database": "lcsdb",
     "port": 3306,
 }
 

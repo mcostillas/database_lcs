@@ -1,8 +1,8 @@
 # model/users.py
 from fastapi import Depends, HTTPException, APIRouter, Form, Path
 from .db import get_db
-
 import bcrypt
+import logging
 
 AdminRouter = APIRouter(tags=["User"])
 
@@ -10,7 +10,8 @@ AdminRouter = APIRouter(tags=["User"])
 
 
 # admin login 
-
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
 @AdminRouter.post("/admin/login/", response_model=dict)
 async def login_administrator(
     username: str = Form(...), 
@@ -18,8 +19,8 @@ async def login_administrator(
     db=Depends(get_db)
 ):
     # Query the database to check if the username exists
-    query_check_user = "SELECT username FROM admin WHERE password = %s"
-    db[0].execute(query_check_user, (username, password))
+    query_check_user = "SELECT password FROM admin WHERE username = %s"
+    db[0].execute(query_check_user, (username,))
     user = db[0].fetchone()
 
     if user:
@@ -27,7 +28,7 @@ async def login_administrator(
         stored_password = user[0]
 
         if password == stored_password:
-            # If username and password are correct, print login successful
+            # If username and password are correct, return success message
              return {"message": "Login successful"}
     
     # If username or password is incorrect, raise an HTTPException
