@@ -8,6 +8,33 @@ AdminRouter = APIRouter(tags=["User"])
 
 # CRUD operations
 
+
+# admin login 
+
+@AdminRouter.post("/admin/login/", response_model=dict)
+async def login_administrator(
+    username: str = Form(...), 
+    password: str = Form(...), 
+    db=Depends(get_db)
+):
+    # Query the database to check if the username exists
+    query_check_user = "SELECT username FROM admin WHERE password = %s"
+    db[0].execute(query_check_user, (username, password))
+    user = db[0].fetchone()
+
+    if user:
+        # Retrieve the stored password from the database
+        stored_password = user[0]
+
+        if password == stored_password:
+            # If username and password are correct, print login successful
+             return {"message": "Login successful"}
+    
+    # If username or password is incorrect, raise an HTTPException
+    raise HTTPException(status_code=401, detail="Incorrect username or password")
+
+
+
 @AdminRouter.get("/admin/", response_model=list)
 async def read_user(
     db=Depends(get_db)
