@@ -30,25 +30,28 @@ async def read_guest(
         return {"guest_id": guest[0], "first_name":guest[1],"last_name":guest[2]}
     raise HTTPException(status_code=404, detail="Guest not found")
 
-@GuestRouter.post("/guest/{guest_id}", response_model=dict)
+@GuestRouter.post("/guest/", response_model=dict)
 async def create_guest(
-    guest_id: int = Path(...), 
     first_name: str = Form(...),
     last_name: str = Form(...),
+    date: str = Form(...),  # Assuming date is provided as a string in the format 'YYYY-MM-DD'
+    time_in: str = Form(...),
+    time_out: str = Form(...),
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
    
-
-    query = "INSERT INTO guest (guest_id, first_name , last_name) VALUES (%s, %s, %s)"
-    db[0].execute(query, (guest_id,first_name,last_name))
+    # Insert the guest record into the database
+    query = "INSERT INTO guest (first_name, last_name, date, time_in, time_out) VALUES (%s, %s, %s, %s, %s)"
+    db[0].execute(query, (first_name, last_name, date, time_in, time_out))
 
     # Retrieve the last inserted ID using LAST_INSERT_ID()
-    db[0].execute(" SELECT MAX(guest_id)  FROM guest")
-    new_user_id = db[0].fetchone()[0]
+    db[0].execute("SELECT LAST_INSERT_ID()")
+    new_guest_id = db[0].fetchone()[0]
     db[1].commit()
 
-    return {"id": new_user_id, "guest_id": guest_id, "first_name": first_name, "last_name": last_name}
+    return {"guest_id": new_guest_id, "first_name": first_name, "last_name": last_name, "date": date, "time_in": time_in, "time_out": time_out}
+
 
 
 @GuestRouter.put("/guest/{guest_id}", response_model=dict)
