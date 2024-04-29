@@ -1,9 +1,8 @@
 # main.py
 from fastapi import FastAPI
 from model.acadcoordinator import AcadcoordinatorRouter
-from model.admin import AdminRouter
-from model.booking_activty import BookingRouter
-from model.guest import GuestRouter
+from model.user import UserRouter
+from model.bookingreq import BookingRouter
 from model.laboratory import LaboratoryRouter
 from model.log_event import LogsRouter
 from model.schedule import ScheduleRouter
@@ -14,14 +13,13 @@ app = FastAPI()
 
 origins = [
     "http://localhost",
-    "http://localhost:5173"
+    "http://localhost:5174"
 ] 
 
 # Include CRUD routes from modules
 app.include_router(AcadcoordinatorRouter, prefix="/api")
-app.include_router(AdminRouter, prefix="/api")
+app.include_router(UserRouter, prefix="/api")
 app.include_router(BookingRouter, prefix="/api")
-app.include_router(GuestRouter, prefix="/api")
 app.include_router(LaboratoryRouter, prefix="/api")
 app.include_router(LogsRouter, prefix="/api")
 app.include_router(ScheduleRouter, prefix="/api")

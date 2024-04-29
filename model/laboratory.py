@@ -2,94 +2,92 @@
 from fastapi import Depends, HTTPException, APIRouter, Form, Path
 from .db import get_db
 
-import bcrypt
+
 
 LaboratoryRouter = APIRouter(tags=["Laboratory"])
 
 # CRUD operations
 
-@LaboratoryRouter.get("/laboratory/", response_model=list)
-async def read_laboratory(
+@LaboratoryRouter.get("/labstatus/", response_model=list)
+async def read_labstatus(
     db=Depends(get_db)
 ):
-    query = "SELECT lab_id, capacity  FROM laboratory"
+    query = "SELECT labstatusid, labname,occupied,lastupdated  FROM labstatus"
     db[0].execute(query)
-    laboratory = [{"lab_id": laboratory[0], "capacity": laboratory[1]} for laboratory in db[0].fetchall()]
-    return laboratory
+    labstatus = [{"labstatusid": labstatus[0], "labname": labstatus[1], "occupied": labstatus[2], "lastupdated": labstatus[3]} for labstatus in db[0].fetchall()]
+    return labstatus
 
-@LaboratoryRouter.get("/laboratory/{lab_id}", response_model=dict)
-async def read_laboratory(
-    lab_id: int, 
+@LaboratoryRouter.get("/labstatus/{labstatusid}", response_model=dict)
+async def read_labstatus(
+    labstatusid: int, 
     db=Depends(get_db)
 ):
-    query = "SELECT lab_id,capacity FROM laboratory WHERE lab_id = %s"
-    db[0].execute(query, (lab_id,))
-    laboratory= db[0].fetchone()
-    if  laboratory:
-        return {"lab_id": laboratory[0], "capacity":laboratory[1]}
-    raise HTTPException(status_code=404, detail="laboratory not found")
+    query = "SELECT labstatusid,labname,occupied,lastupdated FROM labstatus WHERE labstatusid = %s"
+    db[0].execute(query, (labstatusid,))
+    labstatus= db[0].fetchone()
+    if  labstatus:
+        return {"labstatusid": labstatus[0], "labname": labstatus[1], "occupied": labstatus[2], "lastupdated": labstatus[3]}
+    raise HTTPException(status_code=404, detail="labstatus not found")
 
-@LaboratoryRouter.post("/laboratory/{lab_id}", response_model=dict)
+@LaboratoryRouter.post("/labstatus/{labstatusid}", response_model=dict)
 async def create_lab(
-    lab_id: int = Path(...), 
-    capacity: int = Form(...), 
+    labname: str = Form(...), 
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
     
 
-    query = "INSERT INTO laboratory (lab_id, capacity) VALUES (%s, %s)"
-    db[0].execute(query, (lab_id, capacity))
+    query = "INSERT INTO labstatus (labname) VALUES (%s)"
+    db[0].execute(query, (labname))
 
     # Retrieve the last inserted ID using LAST_INSERT_ID()
-    db[0].execute(" SELECT MAX(lab_id)  FROM laboratory")
+    db[0].execute(" SELECT MAX(labstatusid)  FROM labstatus")
     new_user_id = db[0].fetchone()[0]
     db[1].commit()
 
-    return {"id": new_user_id, "lab_id": lab_id, "capacity": capacity}
+    return {"id": new_user_id,"labname": labname}
 
-@LaboratoryRouter.put("/laboratory/{lab_id}", response_model=dict)
-async def update_laboratory(
-   
-    lab_id: int = Path(...), 
-    capacity: int = Form(...), 
+@LaboratoryRouter.put("/labstatus/{labstatusid}", response_model=dict)
+async def update_labstatus(
+    labname: int = Form(...), 
+    occupied: int = Form(...),
     db=Depends(get_db)
 ):
     # Hash the password using bcrypt
   
 
     # Update user information in the database 
-    query = "UPDATE laboratory SET lab_id = %s, capacity = %s WHERE lab_id = %s"
-    db[0].execute(query, (lab_id, capacity, lab_id ))
+    query = "UPDATE labstatus SET labname = %s , occupied = %s WHERE labstatusid = %s"
+    db[0].execute(query, (labname, occupied ))
 
     # Check if the update was successful
     if db[0].rowcount > 0:
         db[1].commit()
-        return {"message": "Laboratory updated successfully"}
+        return {"message": "labstatus updated successfully"}
     
     # If no rows were affected, user not found
-    raise HTTPException(status_code=404, detail="Laboratory not found")
+    raise HTTPException(status_code=404, detail="labstatus not found")
 
-@LaboratoryRouter.delete("/laboratory/{lab_id}", response_model=dict)
-async def delete_laboratory(
-    lab_id: int,
+@LaboratoryRouter.delete("/labstatus/{labstatusid}", response_model=dict)
+async def delete_labstatus(
+    labstatusid: int,
     db=Depends(get_db)
 ):
     try:
         # Check if the user exists
-        query_check_user = "SELECT lab_id FROM laboratory WHERE lab_id = %s"
-        db[0].execute(query_check_user, (lab_id,))
+        query_check_user = "SELECT labstatusid FROM labstatus WHERE labstatusid = %s"
+        db[0].execute(query_check_user, (labstatusid,))
         existing_user = db[0].fetchone()
 
         if not existing_user:
-            raise HTTPException(status_code=404, detail="Laboratory not found")
+            raise HTTPException(status_code=404, detail="labstatus not found")
 
         # Delete the user
-        query_delete_user = "DELETE FROM laboratory WHERE lab_id = %s"
-        db[0].execute(query_delete_user, (lab_id,))
+        query_delete_user = "DELETE FROM labstatus WHERE labstatusid = %s"
+        db[0].execute(query_delete_user, (labstatusid,))
         db[1].commit()
 
-        return {"message": "Laboratory deleted successfully"}
+        return {"message": "labstatus deleted successfully"}
     except Exception as e:
         # Handle other exceptions if necessary
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
