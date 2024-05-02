@@ -13,7 +13,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost",
-    "http://localhost:5174"
+    "http://localhost:5173"
 ] 
 
 # Include CRUD routes from modules
