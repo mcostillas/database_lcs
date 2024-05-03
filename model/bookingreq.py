@@ -44,22 +44,43 @@ async def create_bookings(
     status: str = Form('Pending'),
     db=Depends(get_db)
 ):
-    # Hash the password using bcrypt
-   
-    # Insert the bookings record into the database
-    query = "START TRANSACTION; INSERT INTO guests (firstname, lastname) VALUES (%s, %s) INSERT INTO bookings (guest_id, purpose, daterequested, timeIn, timeOut, status) VALUES (LAST_INSERT_ID(), %s, %s, %s, %s, %s) COMMIT"
-    db[0].execute(query, (Firstname, Lastname, purpose, daterequested, timeIn, timeOut, status))
+    # Insert the guest record into the database if it doesn't exist
+    guest_query = "INSERT IGNORE INTO guests (FirstName, LastName) VALUES (%s, %s)"
+    db[0].execute(guest_query, (Firstname, Lastname))
+    
+    # Retrieve the GuestID of the guest or the existing GuestID if the guest already exists
+    guest_id_query = "SELECT GuestID FROM guests WHERE FirstName = %s AND LastName = %s"
+    db[0].execute(guest_id_query, (Firstname, Lastname))
+    result = db[0].fetchone()
+    if result:
+        guest_id = result[0]
+    else:
+        # Handle the case where the guest doesn't exist
+        # You can raise an exception or return an error message
+        return {"error": "Guest does not exist"}
 
-    # Retrieve the last inserted ID using LAST_INSERT_ID()
-    db[0].execute("SELECT LAST_INSERT_ID()")
-    new_requestid = db[0].fetchone()[0]
+    # Insert the bookings record into the database
+    booking_query = "INSERT INTO bookings (GuestID, DateIn, TimeIn, TimeOut, Purpose, Status) VALUES (%s, %s, %s, %s, %s, %s)"
+    db[0].execute(booking_query, (guest_id, daterequested, timeIn, timeOut, purpose, status))
+    
+    # Commit the transaction
     db[1].commit()
     
     # Close cursor and connection
     db[0].close()
     db[1].close()
 
-    return {"requestid": new_requestid, "Firstname": Firstname, "Lastname": Lastname, "purpose":purpose, "daterequested":daterequested, "timeIn": timeIn, "timeOut": timeOut, "status": status}
+    return {
+        "requestid": guest_id,
+        "Firstname": Firstname,
+        "Lastname": Lastname,
+        "purpose": purpose,
+        "daterequested": daterequested,
+        "timeIn": timeIn,
+        "timeOut": timeOut,
+        "status": status
+    }
+
 
 
 @BookingRouter.put("/bookings/{requestid}", response_model=dict)
