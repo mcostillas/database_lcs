@@ -12,27 +12,36 @@ UserRouter = APIRouter(tags=["User"])
 # users login 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
+
 @UserRouter.post("/users/login/", response_model=dict)
 async def login_users(
     username: str = Form(...), 
     password: str = Form(...), 
     db=Depends(get_db)
 ):
-    # Query the database to check if the username exists
-    query_check_user = "SELECT password FROM users WHERE username = %s"
+    # Query the database to check if the username exists and the user is an admin
+    query_check_user = """
+    SELECT users.UserID, users.Password, adminprofile.FullName, adminprofile.Email, adminprofile.Alias, adminprofile.Age, adminprofile.Position, adminprofile.Address
+    FROM users
+    JOIN adminprofile ON users.UserID = adminprofile.UserID
+    WHERE users.Username = %s AND users.UserType = 'Admin'
+    """
     db[0].execute(query_check_user, (username,))
-    user = db[0].fetchone()
+    admin_user = db[0].fetchone()
 
-    if user:
-        # Retrieve the stored password from the database
-        stored_password = user[0]
+    if admin_user:
+        userid, stored_password, fullname, email, alias, age, position, address = admin_user
 
+        # Compare the plain text password with the stored password
         if password == stored_password:
-            # If username and password are correct, return success message
-             return {"message": "Login successful"}
+            # If username and password are correct, return admin profile data
+            return {"user_id": userid, "username": username, "full_name": fullname, "email": email, "alias": alias, "age": age, "position": position, "address": address}
     
     # If username or password is incorrect, raise an HTTPException
     raise HTTPException(status_code=401, detail="Incorrect username or password")
+
 
 
 
