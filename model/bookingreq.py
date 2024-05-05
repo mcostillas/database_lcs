@@ -83,6 +83,7 @@ async def create_bookings(
 
 
 
+
 @BookingRouter.put("/bookings/{requestid}", response_model=dict)
 async def update_bookings(
     Firstname: str = Form(...),
