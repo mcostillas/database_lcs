@@ -42,6 +42,31 @@ async def login_users(
     # If username or password is incorrect, raise an HTTPException
     raise HTTPException(status_code=401, detail="Incorrect username or password")
 
+@UserRouter.post("/users/login/profile", response_model=dict)
+async def login_users(
+    username: str = Form(...), 
+    db=Depends(get_db)
+):
+    # Query the database to check if the username exists and the user is an admin
+    query_check_user = """
+    SELECT users.UserID, users.Password, adminprofile.FullName, adminprofile.Email, adminprofile.Alias, adminprofile.Age, adminprofile.Position, adminprofile.Address
+    FROM users
+    JOIN adminprofile ON users.UserID = adminprofile.UserID
+    WHERE users.Username = %s AND users.UserType = 'Admin'
+    """
+    db[0].execute(query_check_user, (username,))
+    admin_user = db[0].fetchone()
+
+    if admin_user:
+        userid, stored_password, fullname, email, alias, age, position, address = admin_user
+
+        
+        
+        return {"Username": username, "Full Name": fullname, "Email ": email, "Alias ": alias, "Age ": age, "Position ": position, "Address ": address}
+    
+    # If username or password is incorrect, raise an HTTPException
+    raise HTTPException(status_code=401, detail="Incorrect username or password")
+
 
 
 
