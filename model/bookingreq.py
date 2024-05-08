@@ -12,9 +12,9 @@ BookingRouter = APIRouter(tags=["Booking Requests"])
 async def read_bookings(
     db=Depends(get_db)
 ):
-    query = "SELECT CONCAT(g.FirstName, ' ', g.LastName) AS FullName, b.Purpose, b.CreatedAt FROM bookings b INNER JOIN guests g ON b.GuestID = g.GuestID"
+    query = "SELECT CONCAT(g.FirstName, ' ', g.LastName) AS FullName, b.Purpose, b.CreatedAt, b.TimeIn, b.TimeOut FROM bookings b INNER JOIN guests g ON b.GuestID = g.GuestID"
     db[0].execute(query)
-    bookings = [{"Full name": bookings[0], "Purpose": bookings[1], "Created AT": bookings[2]} for bookings in db[0].fetchall()]
+    bookings = [{"Full name": bookings[0], "Purpose": bookings[1], "Created AT": bookings[2], "TimeIN": bookings[3], "TimeOut": bookings[4]} for bookings in db[0].fetchall()]
     # Close cursor
     db[0].close()
     return bookings
