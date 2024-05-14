@@ -11,9 +11,9 @@ ScheduleRouter = APIRouter(tags=["Schedule"])
 async def read_schedule(
     db=Depends(get_db)
 ):
-    query = "SELECT schedule_id, lab_id, teacher_id FROM schedule"
+    query = "SELECT scheduleid,userid,dayofweek,timein,timeout,roomnumber,participant,status FROM schedule"
     db[0].execute(query)
-    schedule = [{"schedule_id": schedule[0], "lab_id": schedule[1],"teacher_id":schedule[2]} for schedule in db[0].fetchall()]
+    schedule = [{"schedule_id": schedule[0], "userid": schedule[1],"dayofweek":schedule[2],"timein":schedule[3],"timeout":schedule[4],"roomnumber":schedule[5],"participant":schedule[6],"status":schedule[7]} for schedule in db[0].fetchall()]
     return schedule
 
 @ScheduleRouter.get("/schedule/{schedule_id}", response_model=dict)
