@@ -12,9 +12,9 @@ BookingRouter = APIRouter(tags=["Booking Requests"])
 async def read_bookings(
     db=Depends(get_db)
 ):
-    query = "SELECT CONCAT(g.FirstName, ' ', g.LastName) AS FullName, b.Purpose, b.CreatedAt, b.TimeIn, b.TimeOut FROM bookings b INNER JOIN guests g ON b.GuestID = g.GuestID"
+    query = "SELECT CONCAT(g.FirstName, ' ', g.LastName) AS FullName, b.Purpose, b.CreatedAt, b.TimeIn, b.TimeOut, b.bookingid , b.dateIN,  b.Guestid FROM bookings b INNER JOIN guests g ON b.GuestID = g.GuestID"
     db[0].execute(query)
-    bookings = [{"Full name": bookings[0], "Purpose": bookings[1], "Created AT": bookings[2], "TimeIN": bookings[3], "TimeOut": bookings[4]} for bookings in db[0].fetchall()]
+    bookings = [{"Full name": bookings[0], "Purpose": bookings[1], "Created AT": bookings[2], "TimeIN": bookings[3], "TimeOut": bookings[4], "bookingid": bookings[5], "dateIN": bookings[6], "Guestid": bookings[7]} for bookings in db[0].fetchall()]
     # Close cursor
     db[0].close()
     return bookings
@@ -111,33 +111,48 @@ async def update_bookings(
     # If no rows were affected, user not found
     raise HTTPException(status_code=404, detail="bookings not found")
 
-@BookingRouter.delete("/bookings/{requestid}", response_model=dict)
+@BookingRouter.delete("/bookings/{bookingid}", response_model=dict)
 async def delete_bookings(
-    requestid: int,
+    bookingid: int,
     db=Depends(get_db)
 ):
     try:
-        # Check if the user exists
-        query_check_user = "SELECT requestid FROM bookings WHERE requestid = %s"
-        db[0].execute(query_check_user, (requestid,))
-        existing_user = db[0].fetchone()
+        # Check if the booking exists
+        query_check_booking = "SELECT guestid FROM bookings WHERE bookingid = %s"
+        db[0].execute(query_check_booking, (bookingid,))
+        booking = db[0].fetchone()
 
-        if not existing_user:
-            raise HTTPException(status_code=404, detail="bookings not found")
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
 
-        # Delete the user
-        query_delete_user = "DELETE FROM bookings WHERE requestid = %s"
-        db[0].execute(query_delete_user, (requestid,))
+        guestid = booking[0]  # Assuming guestid is the first column in the result
+
+        # Delete the booking
+        query_delete_booking = "DELETE FROM bookings WHERE bookingid = %s"
+        db[0].execute(query_delete_booking, (bookingid,))
+
+        # Delete the guest
+        query_delete_guest = "DELETE FROM guests WHERE guestid = %s"
+        db[0].execute(query_delete_guest, (guestid,))
+
         db[1].commit()
         
-        # Close cursor and connection
-        db[0].close()
-        db[1].close()
-
-        return {"message": "bookings deleted successfully"}
+        return {"message": "Booking and related guest deleted successfully"}
+    except HTTPException as e:
+        # Raise HTTPException as it is
+        raise e
     except Exception as e:
         # Handle other exceptions if necessary
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     finally:
-        # Close the database cursor
-        db[0].close()
+        # Close the database cursor and connection
+        try:
+            db[0].close()
+        except:
+            pass
+        try:
+            db[1].close()
+        except:
+            pass
+       
+

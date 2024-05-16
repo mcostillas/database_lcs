@@ -1,5 +1,7 @@
 # model/users.py
-from fastapi import Depends, HTTPException, APIRouter, Form,Path
+from fastapi import Depends, HTTPException, APIRouter, Form,Path,FastAPI
+from sqlalchemy.orm import Session
+import datetime
 from .db import get_db
 import bcrypt
 
@@ -11,9 +13,9 @@ ScheduleRouter = APIRouter(tags=["Schedule"])
 async def read_schedule(
     db=Depends(get_db)
 ):
-    query = "SELECT scheduleid,userid,dayofweek,timein,timeout,roomnumber,participant,status FROM schedule"
+    query = "SELECT scheduleid,guestid,dayofweek,timein,timeout,roomnumber,participant,status FROM schedule"
     db[0].execute(query)
-    schedule = [{"schedule_id": schedule[0], "userid": schedule[1],"dayofweek":schedule[2],"timein":schedule[3],"timeout":schedule[4],"roomnumber":schedule[5],"participant":schedule[6],"status":schedule[7]} for schedule in db[0].fetchall()]
+    schedule = [{"schedule_id": schedule[0], "guestid": schedule[1],"dayofweek":schedule[2],"timein":schedule[3],"timeout":schedule[4],"roomnumber":schedule[5],"participant":schedule[6],"status":schedule[7]} for schedule in db[0].fetchall()]
     return schedule
 
 @ScheduleRouter.get("/schedule/{schedule_id}", response_model=dict)
@@ -28,25 +30,42 @@ async def read_schedule(
         return {"schedule_id": schedule[0], "lab_id": schedule[1], "teacher_id": schedule[2]}
     raise HTTPException(status_code=404, detail="schedule not found")
 
-@ScheduleRouter.post("/schedule/{schedule_id}", response_model=dict)
+
+
+@ScheduleRouter.post("/schedule/acceptbook", response_model=dict)
 async def create_schedule(
-    schedule_id: int = Path(...), 
-    lab_id: int = Form(...), 
-    teacher_id: int = Form(...), 
-    db=Depends(get_db)
+    guest_id: int = Form(...),
+    day_of_week: str = Form(...),
+    time_in: str = Form(...),
+    time_out: str = Form(...),
+    participant: str = Form(...),
+    db: Session = Depends(get_db)
 ):
-    # Hash the password using bcrypt
+    # Insert the schedule record into the database
+    schedule_query = "INSERT INTO schedule (GuestID, dayOfWeek, timeIn, timeOut, participant, roomNumber, status) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+
+    db[0].execute(schedule_query, (
+        guest_id, 
+        day_of_week, 
+        time_in, 
+        time_out, 
+        participant, 
+        "some_room_number",  # Replace with actual room number if available
+        "Pending"  # Assuming status is 'Pending' by default
+    ))
     
-
-    query = "INSERT INTO schedule (schedule_id, lab_id, teacher_id) VALUES (%s, %s, %s)"
-    db[0].execute(query, (schedule_id, lab_id, teacher_id))
-
-    # Retrieve the last inserted ID using LAST_INSERT_ID()
-    db[0].execute(" SELECT MAX(schedule_id) FROM schedule")
-    new_user_id = db[0].fetchone()[0]
+    # Commit the transaction
     db[1].commit()
 
-    return {"schedule_id": new_user_id, "lab_id": lab_id, "teacher_id": teacher_id}
+    return {
+        "guest_id": guest_id,
+        "day_of_week": day_of_week,
+        "time_in": time_in,
+        "time_out": time_out,
+        "participant": participant,
+        "status": "Pending"  # Assuming status is 'Pending' by default
+    }
+
 
 @ScheduleRouter.put("/schedule/{schedule_id}", response_model=dict)
 async def update_schedule(
