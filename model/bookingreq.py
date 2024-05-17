@@ -24,7 +24,7 @@ async def read_bookings(
 @BookingRouter.get("/bookings/history", response_model=List[dict])
 async def get_history(db=Depends(get_db)):
     # Perform a JOIN operation between history and adminprofile tables
-    query = "SELECT  history.Date, history.FullName, history.Purpose, history.Action, adminprofile.FullName AS AdminFullName FROM history JOIN adminprofile ON history.UserID = adminprofile.UserID "
+    query = "SELECT  history.historyid, history.Date, history.FullName, history.Purpose, history.Action, adminprofile.FullName AS AdminFullName FROM history JOIN adminprofile ON history.UserID = adminprofile.UserID "
     db[0].execute(query)
     history_records = db[0].fetchall()
 
@@ -32,11 +32,12 @@ async def get_history(db=Depends(get_db)):
     result = []
     for record in history_records:
         result.append({
-            "Date": record[0],
-            "FullName": record[1],
-            "Purpose": record[2],
-            "Action": record[3],
-            "AdminFullName": record[4]
+            "HistoryID": record[0],
+            "Date": record[1],
+            "FullName": record[2],
+            "Purpose": record[3],
+            "Action": record[4],
+            "AdminFullName": record[5]
         })
 
     return result

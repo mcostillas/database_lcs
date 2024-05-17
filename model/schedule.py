@@ -13,22 +13,38 @@ ScheduleRouter = APIRouter(tags=["Schedule"])
 async def read_schedule(
     db=Depends(get_db)
 ):
-    query = "SELECT scheduleid,guestid,dayofweek,timein,timeout,roomnumber,participant,status FROM schedule"
+    query = "SELECT scheduleid,guestid,dayofweek,timein,timeout,roomnumber,schedSemester,yearCourseandSection,participant,status FROM schedule"
     db[0].execute(query)
-    schedule = [{"schedule_id": schedule[0], "guestid": schedule[1],"dayofweek":schedule[2],"timein":schedule[3],"timeout":schedule[4],"roomnumber":schedule[5],"participant":schedule[6],"status":schedule[7]} for schedule in db[0].fetchall()]
+    schedule = [{"schedule_id": schedule[0], "guestid": schedule[1],"dayofweek":schedule[2],"timein":schedule[3],"timeout":schedule[4],"roomnumber":schedule[5],"schedSemester": schedule[6],"YearSection": schedule[7], "participant": schedule[8],"status": schedule[9]} for schedule in db[0].fetchall()]
     return schedule
 
-@ScheduleRouter.get("/schedule/{schedule_id}", response_model=dict)
+@ScheduleRouter.get("/schedule/{roomnumber}", response_model=list)
 async def read_schedule(
-    schedule_id: int, 
+    roomnumber: int, 
     db=Depends(get_db)
 ):
-    query = "SELECT schedule_id, lab_id, teacher_id FROM schedule WHERE schedule_id = %s"
-    db[0].execute(query, (schedule_id,))
-    schedule = db[0].fetchone()
-    if schedule:
-        return {"schedule_id": schedule[0], "lab_id": schedule[1], "teacher_id": schedule[2]}
-    raise HTTPException(status_code=404, detail="schedule not found")
+    query = "SELECT scheduleid,guestid,dayofweek,timein,timeout,roomnumber,schedSemester,yearCourseandSection,participant,status FROM schedule WHERE roomnumber= %s"
+    db[0].execute(query, (roomnumber,))
+    schedules = db[0].fetchall()
+
+    if schedules:
+        return [
+            {
+                "schedule_id": schedule[0], 
+                "guestid": schedule[1],
+                "dayofweek": schedule[2],
+                "timein": schedule[3],
+                "timeout": schedule[4],
+                "roomnumber": schedule[5],  
+                "schedSemester": schedule[6],
+                "YearSection": schedule[7],
+                "participant": schedule[8],
+                "status": schedule[9]
+            }
+            for schedule in schedules
+        ]
+    raise HTTPException(status_code=404, detail="Schedules not found for room number")
+
 
 
 
