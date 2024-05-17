@@ -89,6 +89,43 @@ async def update_schedule(
     # If no rows were affected, user not found
     raise HTTPException(status_code=404, detail="schedule not found")
 
+@ScheduleRouter.post("/history/add", response_model=dict)
+async def add_history(
+    guest_id: int = Form(...),
+    user_id: int = Form(...),
+    booking_id: int = Form(...),
+    full_name: str = Form(...),
+    purpose: str = Form(...),
+    action: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # Insert the history record into the database
+    history_query = """
+    INSERT INTO history (Date, UserID, GuestID, BookingID, FullName, Purpose, Action) 
+    VALUES (CURDATE(), %s, %s, %s, %s, %s, %s)
+    """
+
+    db[0].execute(history_query, (
+        user_id,
+        guest_id,  # Assuming UserID is the same as guest_id; modify if different
+        booking_id, 
+        full_name, 
+        purpose, 
+        action
+    ))
+
+    # Commit the transaction
+    db[1].commit()
+
+    return {
+        "guest_id": guest_id,
+        "booking_id": booking_id,
+        "full_name": full_name,
+        "purpose": purpose,
+        "action": action
+    }
+
+
 @ScheduleRouter.delete("/schedule/{schedule_id}", response_model=dict)
 async def delete_schedule(
     schedule_id: int,

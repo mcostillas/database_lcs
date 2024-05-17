@@ -1,6 +1,7 @@
 from datetime import date,time
 from fastapi import Depends, HTTPException, APIRouter, Form, Path, Body
 from .db import get_db
+from typing import List
 
 import bcrypt
 
@@ -19,19 +20,27 @@ async def read_bookings(
     db[0].close()
     return bookings
 
-@BookingRouter.get("/bookings/{requestid}", response_model=dict)
-async def read_bookings(
-    requestid: int, 
-    db=Depends(get_db)
-):
-    query = "SELECT  requestid, userid ,Firstname, Lastname, purpose, daterequested,status FROM bookings WHERE requestid = %s"
-    db[0].execute(query, (requestid,))
-    bookings = db[0].fetchone()
-    if bookings:
-        # Close cursor
-        db[0].close()
-        return {"requestid": bookings[0], "userid": bookings[1], "Firstname": bookings[2],"Lastname": bookings[3],"purpose": bookings[4],"daterequested": bookings[5],"status": bookings[6]}
-    raise HTTPException(status_code=404, detail="bookings not found")
+
+@BookingRouter.get("/bookings/history", response_model=List[dict])
+async def get_history(db=Depends(get_db)):
+    # Perform a JOIN operation between history and adminprofile tables
+    query = "SELECT  history.Date, history.FullName, history.Purpose, history.Action, adminprofile.FullName AS AdminFullName FROM history JOIN adminprofile ON history.UserID = adminprofile.UserID "
+    db[0].execute(query)
+    history_records = db[0].fetchall()
+
+    # Prepare a list of dictionaries to return the result
+    result = []
+    for record in history_records:
+        result.append({
+            "Date": record[0],
+            "FullName": record[1],
+            "Purpose": record[2],
+            "Action": record[3],
+            "AdminFullName": record[4]
+        })
+
+    return result
+
 
 @BookingRouter.post("/bookings/", response_model=dict)
 async def create_bookings(
