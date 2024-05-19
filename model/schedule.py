@@ -66,7 +66,7 @@ async def create_schedule(
         time_in, 
         time_out, 
         participant, 
-        "some_room_number",  # Replace with actual room number if available
+        "204",  # Replace with actual room number if available
         "Pending"  # Assuming status is 'Pending' by default
     ))
     

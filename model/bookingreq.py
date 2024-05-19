@@ -1,7 +1,8 @@
 from datetime import date,time
-from fastapi import Depends, HTTPException, APIRouter, Form, Path, Body
+from fastapi import Depends, HTTPException, APIRouter, Form, Path, Body, BackgroundTasks
 from .db import get_db
 from typing import List
+
 
 import bcrypt
 
@@ -48,6 +49,7 @@ async def create_bookings(
     Firstname: str = Form(...),
     Lastname: str = Form(...),
     purpose: str = Form(...),
+    Email: str = Form(...),
     daterequested: str = Form(...),  # Assuming date is provided as a string in the format 'YYYY-MM-DD'
     timeIn: str = Form(...),  # Add timeIn parameter
     timeOut: str = Form(...),  # Add timeOut parameter
@@ -55,8 +57,8 @@ async def create_bookings(
     db=Depends(get_db)
 ):
     # Insert the guest record into the database if it doesn't exist
-    guest_query = "INSERT IGNORE INTO guests (FirstName, LastName) VALUES (%s, %s)"
-    db[0].execute(guest_query, (Firstname, Lastname))
+    guest_query = "INSERT IGNORE INTO guests (FirstName, LastName, Email) VALUES (%s, %s, %s)"
+    db[0].execute(guest_query, (Firstname, Lastname,Email))
     
     # Retrieve the GuestID of the guest or the existing GuestID if the guest already exists
     guest_id_query = "SELECT GuestID FROM guests WHERE FirstName = %s AND LastName = %s"
@@ -90,7 +92,6 @@ async def create_bookings(
         "timeOut": timeOut,
         "status": status
     }
-
 
 
 

@@ -1,4 +1,5 @@
 # main.py
+
 from fastapi import FastAPI
 from model.acadcoordinator import AcadcoordinatorRouter
 from model.user import UserRouter
