@@ -14,9 +14,9 @@ BookingRouter = APIRouter(tags=["Booking Requests"])
 async def read_bookings(
     db=Depends(get_db)
 ):
-    query = "SELECT CONCAT(g.FirstName, ' ', g.LastName) AS FullName, b.Purpose, b.CreatedAt, b.TimeIn, b.TimeOut, b.bookingid , b.dateIN,  b.Guestid FROM bookings b INNER JOIN guests g ON b.GuestID = g.GuestID"
+    query = "SELECT CONCAT(g.FirstName, ' ', g.LastName) AS FullName, b.Purpose, b.CreatedAt, b.TimeIn, b.TimeOut, b.bookingid , b.dateIN,  b.Guestid , b.desiredLab FROM bookings b INNER JOIN guests g ON b.GuestID = g.GuestID"
     db[0].execute(query)
-    bookings = [{"Full name": bookings[0], "Purpose": bookings[1], "Created AT": bookings[2], "TimeIN": bookings[3], "TimeOut": bookings[4], "bookingid": bookings[5], "dateIN": bookings[6], "Guestid": bookings[7]} for bookings in db[0].fetchall()]
+    bookings = [{"Full name": bookings[0], "Purpose": bookings[1], "Created AT": bookings[2], "TimeIN": bookings[3], "TimeOut": bookings[4], "bookingid": bookings[5], "dateIN": bookings[6], "Guestid": bookings[7],"desiredLab": bookings[8]} for bookings in db[0].fetchall()]
     # Close cursor
     db[0].close()
     return bookings
@@ -53,6 +53,7 @@ async def create_bookings(
     daterequested: str = Form(...),  # Assuming date is provided as a string in the format 'YYYY-MM-DD'
     timeIn: str = Form(...),  # Add timeIn parameter
     timeOut: str = Form(...),  # Add timeOut parameter
+    desiredLab: str = Form(...),
     status: str = Form('Pending'),
     db=Depends(get_db)
 ):
@@ -72,8 +73,8 @@ async def create_bookings(
         return {"error": "Guest does not exist"}
 
     # Insert the bookings record into the database
-    booking_query = "INSERT INTO bookings (GuestID, DateIn, TimeIn, TimeOut, Purpose, Status) VALUES (%s, %s, %s, %s, %s, %s)"
-    db[0].execute(booking_query, (guest_id, daterequested, timeIn, timeOut, purpose, status))
+    booking_query = "INSERT INTO bookings (GuestID, DateIn, TimeIn, TimeOut, desiredLab, Purpose, Status) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    db[0].execute(booking_query, (guest_id, daterequested, timeIn, timeOut, desiredLab, purpose, status))
     
     # Commit the transaction
     db[1].commit()

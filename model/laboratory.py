@@ -1,8 +1,11 @@
 # model/users.py
 from fastapi import Depends, HTTPException, APIRouter, Form, Path
 from .db import get_db
+from pydantic import BaseModel
+from typing import List
 
-
+class AvailableRoomsResponse(BaseModel):
+    available_rooms: List[str]
 
 LaboratoryRouter = APIRouter(tags=["Laboratory"])
 
@@ -17,6 +20,29 @@ async def read_labstatus(
     labstatus = [{"labstatusid": labstatus[0], "labname": labstatus[1], "occupied": labstatus[2], "lastupdated": labstatus[3]} for labstatus in db[0].fetchall()]
     return labstatus
 
+@LaboratoryRouter.post("/labstatus/bookinglab", response_model=AvailableRoomsResponse)
+async def find_available_lab(
+    dayOfWeek: str = Form(...), 
+    timeIn: str = Form(...), 
+    timeOut: str = Form(...), 
+    db=Depends(get_db)
+):
+    all_rooms = ["201", "202", "203", "204", "205"]
+    
+    query = "SELECT roomNumber FROM schedule  WHERE dayOfWeek = %s AND timeIn < %s  AND timeOut > %s "
+    
+    # Execute the query
+    db[0].execute(query, (dayOfWeek, timeOut, timeIn))
+    booked_rooms = db[0].fetchall()
+    
+    booked_rooms_set = {room[0] for room in booked_rooms}
+    available_rooms = [room for room in all_rooms if room not in booked_rooms_set]
+    
+    if not available_rooms:
+        raise HTTPException(status_code=404, detail="No available rooms found for the given time.")
+    
+    return AvailableRoomsResponse(available_rooms=available_rooms)
+   
 @LaboratoryRouter.get("/labstatus/{labstatusid}", response_model=dict)
 async def read_labstatus(
     labstatusid: int, 
